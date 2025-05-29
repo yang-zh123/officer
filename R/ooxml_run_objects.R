@@ -219,30 +219,51 @@ run_seqfield <- run_word_field
 to_wml.run_word_field <- function(x, add_ns = FALSE, ...) {
   pr <- if (!is.null(x$pr)) rpr_wml(x$pr) else "<w:rPr/>"
 
-  xml_elt_1 <- paste0(
-    wr_ns_yes,
-    pr,
-    "<w:fldChar w:fldCharType=\"begin\" w:dirty=\"true\"/>",
-    "</w:r>"
-  )
-  xml_elt_2 <- paste0(
-    wr_ns_yes,
-    pr,
-    sprintf(
-      "<w:instrText xml:space=\"preserve\" w:dirty=\"true\">%s</w:instrText>",
-      x$field
-    ),
-    "</w:r>"
-  )
-  xml_elt_3 <- paste0(
-    wr_ns_yes,
-    pr,
-    "<w:fldChar w:fldCharType=\"end\" w:dirty=\"true\"/>",
-    "</w:r>"
-  )
-  out <- paste0(xml_elt_1, xml_elt_2, xml_elt_3)
+  pattern <- "(?<=\\{)([^\\{\\}]*(?=\\}))|(\\S)|(\\w+)"
+
+  matches <- regmatches(x$field, gregexpr(pattern, x$field, perl = TRUE))[[1]]
+
+  xml_elt <- list()
+
+  for (i in 1:length(matches)) {
+
+    match = matches[i]
+
+    if(match == "{"){
+      xml_elt[i] <- paste0(
+        wr_ns_yes,
+        pr,
+        "<w:fldChar w:fldCharType=\"begin\" w:dirty=\"true\"/>",
+        "</w:r>"
+      )
+    }
+
+    else if(match == "}"){
+      xml_elt[i] <- paste0(
+        wr_ns_yes,
+        pr,
+        "<w:fldChar w:fldCharType=\"end\" w:dirty=\"true\"/>",
+        "</w:r>"
+      )
+    }
+
+    else{
+      xml_elt[i] <- paste0(
+        wr_ns_yes,
+        pr,
+        sprintf(
+          "<w:instrText xml:space=\"preserve\" w:dirty=\"true\">%s</w:instrText>",
+          match
+        ),
+        "</w:r>"
+      )
+    }
+  }
+
+  out = paste0(unlist(xml_elt), collapse = "")
 
   out
+
 }
 
 # autonum ----
